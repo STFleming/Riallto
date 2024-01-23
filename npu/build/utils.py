@@ -11,7 +11,7 @@ def is_win()->bool:
 def wsl_prefix()->str:
     """ if we are running this on windows return the appropriate wsl prefix."""
     if is_win():
-        return "wsl -d Riallto "
+        return "C:\Program Files\WSL\wsl.exe -d Riallto "
     else:
         return ""
 
