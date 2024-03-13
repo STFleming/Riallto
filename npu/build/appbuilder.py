@@ -65,9 +65,12 @@ class AppBuilder:
         """ Speficies a kernel to trace. Inserts Trace infrastructure into the generated MLIR and modifies the
         generated sequence to support it """
         if not self._trace_set:
-            setattr(kernel, "trace", True)
-            setattr(kernel, "trace_depth", depth)
-            self.trace = True
+            if kernel.ttype == "CT":
+                setattr(kernel, "trace", True)
+                setattr(kernel, "trace_depth", depth)
+                self.trace = True
+            else:
+                raise RuntimeError(f"Currently it is only possible to trace CT kernels, unable to trace {kernel.name}")
         else:
             raise RuntimeError(f"We are only allowed to currently trace one kernel at a time")
 

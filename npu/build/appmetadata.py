@@ -46,7 +46,6 @@ class AppMetada:
         if None in [k.tloc for k in ct_kernels]:
             raise ValueError(f'Unable to place all kernels at CT tiles')
 
-
     def _verify_constrained_cttiles(self, ct_tiles):
         ct_kernels_tloc = [k for k in self.kernels if k.ttype == 'CT' and k.tloc is not None]
         for k in ct_kernels_tloc:
