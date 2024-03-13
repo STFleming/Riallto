@@ -15,6 +15,20 @@ an AIEBuild license from https://www.xilinx.com/getlicense.
 """
 
 from setuptools import find_packages, setup
+from pathlib import Path
+
+def attempt_download(url:str, path:Path)->None:
+    """" Attempts to download a file and place it in the path. Stops siliently if it is not able to """
+    import urllib.request
+    try:
+        opener = urllib.request.build_opener()
+        opener.addheaders = [(('User-Agent', 'Mozilla/5.0'))]
+        urllib.request.install_opener(opener)
+        urllib.request.urlretrieve(url, path)
+    except:
+        pass
+
+attempt_download(url='https://d3js.org/d3.v7.min.js', path=Path('npu/runtime/tracer/visualisations/libs/d3.v7.min.js'))
 
 setup(
     name="npu",
@@ -22,8 +36,9 @@ setup(
     package_data={
         '': ['*.py', '*.pyd', '*.so', '*.dll', 'Makefile', '.h', '.cpp',
             'tests/*',
-	        'runtime/*.so',
+	    'runtime/*.so',
             'runtime/*.dll',
+            'runtime/tracer/visualisations/libs/*.js',
             'build/*.txt',
             'utils/*',
             'lib/applications/*',
