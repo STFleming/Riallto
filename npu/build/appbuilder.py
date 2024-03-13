@@ -51,6 +51,7 @@ class AppBuilder:
         self.connections = None
 
         self.previous_build_args = None
+        self._trace_set = False
 
     def __call__(self, *args):
         """ Calling the class will execute the callgraph directly."""
@@ -59,6 +60,16 @@ class AppBuilder:
             return self.callgraph(*args)
         else:
             return self.callgraph()
+
+    def trace(self, kernel, depth:int)->None:
+        """ Speficies a kernel to trace. Inserts Trace infrastructure into the generated MLIR and modifies the
+        generated sequence to support it """
+        if not self._trace_set:
+            setattr(kernel, "trace", True)
+            setattr(kernel, "trace_depth", depth)
+            self.trace = True
+        else:
+            raise RuntimeError(f"We are only allowed to currently trace one kernel at a time")
 
     def callgraph(self):
         """ This method should be overridden by a subclass. """

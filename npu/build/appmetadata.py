@@ -18,7 +18,7 @@ class AppMetada:
         Dictionary storing all unique connections between kernels in this application.
     sequence : list
         List containing the ordered data movements as traced in the AppBuilder's callgraph.
-
+    
     """
 
     def __init__(self, appname, kernels, connections, sequence):
@@ -40,12 +40,12 @@ class AppMetada:
         ct_tiles = [(0,ix) for ix in range(2,6)]
         ct_kernels = [k for k in self.kernels if k.ttype == 'CT']
         
-
         self._verify_constrained_cttiles(ct_tiles)
         self._place_unconstrainted_kernels(ct_tiles) 
 
         if None in [k.tloc for k in ct_kernels]:
             raise ValueError(f'Unable to place all kernels at CT tiles')
+
 
     def _verify_constrained_cttiles(self, ct_tiles):
         ct_kernels_tloc = [k for k in self.kernels if k.ttype == 'CT' and k.tloc is not None]
@@ -73,6 +73,9 @@ class AppMetada:
         _json['kernels'] = OrderedDict()
         for k in self.kernels:
             _json['kernels'][k.name] = k.to_metadata() 
+            if hasattr(k, 'trace'):
+                _json['kernels'][k.name]['trace'] = True
+                _json['kernels'][k.name]['trace_depth'] = k.trace_depth
 
         _json['connections'] = OrderedDict()        
         for c in self.connections:            
