@@ -77,6 +77,8 @@ class MLIRBuilder:
         for t in used_tiles:
             s += f'{t.to_mlir_tile_declare(indent)}\n'
 
+        s += self._generate_trace_channel()
+
         for o in self.objfifos:
             s += f'{indent}{o.to_mlir_declare()}\n'
         s += '\n'
@@ -103,6 +105,16 @@ class MLIRBuilder:
             f.write(s)
 
         return ""        
+
+    def _generate_trace_channel(self)->str:
+        """ If there is a kernel that has been marked for tracing then
+        setup the flow primitives for transmitting the data to shim """
+        s = ''
+        for _, k in self.kernels.items():
+            if 'trace' in k:
+                s = f'aie.flow(%tile{k["tloc"][0]}{k["tloc"][1]}, "Trace" : 0, %tile00, "DMA" : 1)\n\n'
+                return s
+        return s
 
 
     def _map_kernels_to_tiles(self):
