@@ -4,11 +4,13 @@
 from pathlib import Path
 import pytest
 import numpy as np
+from npu.build.kernel import Kernel
 from npu.build.mtkernel import MTPassThrough, MTSplit, MTConcat
 from npu.build.appbuilder import AppBuilder
 from npu.lib.graphs.graph_1ct import RGB720pBuilder
 from npu.lib import Rgba2Hue, Rgba2Gray, Gray2Rgba, BitwiseAnd
 from npu.lib import InRange, RgbaRtpThres, ThresholdRgba
+import re
 
 imgdir = str(Path(__file__).parent / "images") + '/'
 x_in = np.zeros(shape=(720, 1280, 4), dtype=np.uint8)
@@ -93,7 +95,8 @@ def test_color_detect(down):
 
     app_bldr = ColorDetectApplication()
     _ = app_bldr.to_metadata(x_in, x_out)
-    app_bldr.save(f"{imgdir}ColorDetectApplication_{('down' if down else 'up')}.svg")
+    app_bldr.save(f"{imgdir}ColorDetectApplication_"
+                  f"{('down' if down else 'up')}.svg")
 
 
 @pytest.mark.parametrize('scale', [1, 2, 4])
@@ -142,7 +145,8 @@ def test_mtpassthrough(dual):
 
     app_builder = SimpleMemTileApplication()
     _ = app_builder.to_metadata(x_in, x_out)
-    app_builder.save(f"{imgdir}memtile_passthrough{('_dual' if dual else '')}.svg")
+    app_builder.save(f"{imgdir}memtile_passthrough"
+                     f"{('_dual' if dual else '')}.svg")
 
 
 def test_mixed_kernels_scaledup():
@@ -158,7 +162,7 @@ def test_mixed_kernels_scaledup():
             for t in range(720):
                 xs = self.split(xin[t])
                 for i in range(4):
-                    if (i%2) == 0:
+                    if (i % 2) == 0:
                         xs[i] = self.ks0[i//2](xs[i], 1280)
                     else:
                         xs[i] = self.ks1[i//2](xs[i], 1280)
@@ -203,12 +207,60 @@ def test_df_pipeline_scaledup(tloc):
             for t in range(x_in.shape[0]):
                 xs = self.split(xin[t])
                 for i in range(2):
-                        size = x_in.shape[1]*x_in.shape[2] // 2
-                        xo[i] = self.ks0[i](xs[i], size)
-                        xo[i] = self.ks1[i](xo[i], size//4)
+                    size = x_in.shape[1]*x_in.shape[2] // 2
+                    xo[i] = self.ks0[i](xs[i], size)
+                    xo[i] = self.ks1[i](xo[i], size//4)
 
                 xout[t] = self.concat(xo)
 
     app_builder = ScaledUpDfPipelineApplication()
     _ = app_builder.to_metadata(x_in, x_out)
     app_builder.save(f'{imgdir}ScaledUpDfPipelineApplication_{tloc}.svg')
+
+
+def test_dataparallel():
+    kernel_src = '''
+        #include <aie_api/aie.hpp>
+        #define N 720
+        extern "C" {
+        void passthrough(uint8_t *data_in, uint8_t *data_out) {
+            for(int i=0; i < N; i++) {
+                data_out[i] = data_in[i];
+            }
+        }
+        } // extern "C"
+    '''
+
+    def setval_behavioral(obj):
+        obj.data_out.array = obj.data_in.array
+
+    class DataParallelPassthrough(AppBuilder):
+        def __init__(self):
+            self.split = MTSplit(4)
+            self.concat = MTConcat()
+            self.ks = [Kernel(kernel_src, setval_behavioral) for _ in range(4)]
+            super().__init__()
+
+        def callgraph(self, xin, xout):
+            for t in range(720):
+                xs = self.split(xin[t])
+                for i in range(4):
+                    xs[i] = self.ks[i](xs[i])
+                x = self.concat(xs)
+                xout[t] = x
+
+    app_builder = DataParallelPassthrough()
+    _ = app_builder.to_metadata(x_in, x_out)
+    svgfile = f'{imgdir}DataParallelPassthrough.svg'
+    app_builder.save(svgfile)
+
+    assert _count_class_occurrences(svgfile, 'kernel') == 8
+    assert _count_class_occurrences(svgfile, 'mem_tile_buffers') == 16
+
+
+def _count_class_occurrences(svgfile, classname):
+    pattern = re.compile(f'class="{classname}"')
+    with open(svgfile, 'r', encoding='utf-8') as file:
+        content = file.read()
+    matches = pattern.findall(content)
+    return len(matches)
