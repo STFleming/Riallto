@@ -17,6 +17,14 @@ x_in = np.zeros(shape=(720, 1280, 4), dtype=np.uint8)
 x_out = np.zeros(shape=(720, 1280, 4), dtype=np.uint8)
 
 
+def _count_class_occurrences(svgfile, classname):
+    pattern = re.compile(f'class="{classname}"')
+    with open(svgfile, 'r', encoding='utf-8') as file:
+        content = file.read()
+    matches = pattern.findall(content)
+    return len(matches)
+
+
 @pytest.mark.parametrize('kernel', [RgbaRtpThres, ThresholdRgba])
 def test_RGB720pBuilder(kernel):
     app_builder = RGB720pBuilder(kernel=kernel())
@@ -256,11 +264,3 @@ def test_dataparallel():
 
     assert _count_class_occurrences(svgfile, 'kernel') == 8
     assert _count_class_occurrences(svgfile, 'mem_tile_buffers') == 16
-
-
-def _count_class_occurrences(svgfile, classname):
-    pattern = re.compile(f'class="{classname}"')
-    with open(svgfile, 'r', encoding='utf-8') as file:
-        content = file.read()
-    matches = pattern.findall(content)
-    return len(matches)
