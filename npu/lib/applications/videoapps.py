@@ -8,6 +8,7 @@ import cv2
 import inspect
 import numpy as np
 import colorsys
+import time
 import matplotlib.pyplot as plt
 import ipywidgets as widget
 from IPython.display import display
@@ -182,6 +183,7 @@ class VideoApplication:
 
     def start(self):
         """Start the video processing"""
+        time.sleep(0.3)
         ret, _ = self._cap.read()
         if not self._cap.isOpened() or not ret:
             self._cap.release()
