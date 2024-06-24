@@ -205,7 +205,8 @@ class AppViz:
                 dst_buf_color = self._dbuf_colors[c['name']]
 
             show_mem_buffer = True
-            if 'in_buffer' not in c['name']:
+            mtmode = src.get('mtmode')
+            if mtmode != 'split':
                 if self._mt2ct_passthrough['found']:
                     dst_buf_color = self._mt2ct_passthrough['color']
                     show_mem_buffer = False
@@ -226,7 +227,7 @@ class AppViz:
                         self._kanimate_duration/2,
                         start_empty=dbuf)
             if not dbuf:
-                self._draw_mem2ct_ic(dst, c, dst_buf_color)
+                self._draw_mem2ct_ic(dst, c, dst_buf_color, mtmode)
             else:
                 self._mt2ct_counter += 1
 
@@ -256,7 +257,7 @@ class AppViz:
                     color=src_color)
         self._ct2mt_counter += 1
 
-    def _draw_mem2ct_ic(self, dst, c, dst_color) -> None:
+    def _draw_mem2ct_ic(self, dst, c, dst_color, mtmode=None) -> None:
         """Display animation originating from MT and destination CT"""
 
         dst_row = self._loc_conv[dst['tloc'][1]]
@@ -276,7 +277,7 @@ class AppViz:
                     duration=self._kanimate_duration/2,
                     delay=delay,
                     color=dst_color)
-        if 'in_buffer' in c['name']:
+        if mtmode == 'split':
             self._mt2ct_counter += 1
 
     def _draw_ub2mem_ic(self, src, dst) -> None:
