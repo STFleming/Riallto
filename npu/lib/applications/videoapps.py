@@ -9,6 +9,7 @@ import inspect
 import numpy as np
 import colorsys
 import time
+import platform
 import matplotlib.pyplot as plt
 import ipywidgets as widget
 from IPython.display import display
@@ -159,7 +160,7 @@ class VideoApplication:
 
     def _get_resolution(self, videosource):
         if isinstance(videosource, int):
-            if os.name != 'nt':
+            if platform.system() == 'Linux':
                 prop = cv2.CAP_V4L2
             elif videosource == 0:
                 prop = cv2.CAP_MSMF
