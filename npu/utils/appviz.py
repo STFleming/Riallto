@@ -206,7 +206,7 @@ class AppViz:
 
             show_mem_buffer = True
             mtmode = src.get('mtmode')
-            if mtmode != 'split':
+            if mtmode not in ['split', 'passthrough']:
                 if self._mt2ct_passthrough['found']:
                     dst_buf_color = self._mt2ct_passthrough['color']
                     show_mem_buffer = False
@@ -277,7 +277,7 @@ class AppViz:
                     duration=self._kanimate_duration/2,
                     delay=delay,
                     color=dst_color)
-        if mtmode == 'split':
+        if mtmode in ['split', 'passthrough']:
             self._mt2ct_counter += 1
 
     def _draw_ub2mem_ic(self, src, dst) -> None:
