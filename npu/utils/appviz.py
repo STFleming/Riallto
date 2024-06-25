@@ -206,7 +206,7 @@ class AppViz:
 
             show_mem_buffer = True
             mtmode = src.get('mtmode')
-            if mtmode not in ['split', 'passthrough']:
+            if mtmode == 'passthrough':
                 if self._mt2ct_passthrough['found']:
                     dst_buf_color = self._mt2ct_passthrough['color']
                     show_mem_buffer = False
@@ -261,7 +261,7 @@ class AppViz:
         """Display animation originating from MT and destination CT"""
 
         dst_row = self._loc_conv[dst['tloc'][1]]
-        delay = (self._mt2ct_counter-1) / 5
+        delay = self._mt2ct_counter / 5
 
         self._col_svg.mem_tiles[0].add_ic_animation(
                     diagonal_from_tile=1,
