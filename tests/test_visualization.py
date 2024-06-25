@@ -73,7 +73,8 @@ def test_ct2ct(app):
     app_builder = Pipeline()
     x_out1 = np.zeros(shape=(720, 1280), dtype=np.uint8)
     _ = app_builder.to_metadata(x_in, x_out1)
-    app_builder.save(imgdir + app[0] + '.svg')
+    app_builder.save((svgfile := imgdir + app[0] + '.svg'))
+    assert _count_class_occurrences(svgfile, 'kernel') == 4
 
 
 @pytest.mark.parametrize('down', [True, False])
@@ -103,8 +104,10 @@ def test_color_detect(down):
 
     app_bldr = ColorDetectApplication()
     _ = app_bldr.to_metadata(x_in, x_out)
-    app_bldr.save(f"{imgdir}ColorDetectApplication_"
-                  f"{('down' if down else 'up')}.svg")
+    svgfile = f"{imgdir}ColorDetectApplication_{('down' if down else 'up')}.svg"
+    app_bldr.save(svgfile)
+    assert _count_class_occurrences(svgfile, 'kernel') == 8
+    assert _count_class_occurrences(svgfile, 'mem_tile_buffers') == 2
 
 
 @pytest.mark.parametrize('scale', [1, 2, 4])
@@ -130,7 +133,9 @@ def test_color_scaledup(scale):
 
     app_builder = ScaledUpThresholdApplication()
     _ = app_builder.to_metadata(x_in, x_out)
-    app_builder.save(f'{imgdir}ScaledUpThresholdApplication_x{scale}.svg')
+    svgfile = f'{imgdir}ScaledUpThresholdApplication_x{scale}.svg'
+    app_builder.save(svgfile)
+    assert _count_class_occurrences(svgfile, 'kernel') == scale * 2
 
 
 @pytest.mark.parametrize('dual', [True, False])
@@ -153,8 +158,10 @@ def test_mtpassthrough(dual):
 
     app_builder = SimpleMemTileApplication()
     _ = app_builder.to_metadata(x_in, x_out)
-    app_builder.save(f"{imgdir}memtile_passthrough"
-                     f"{('_dual' if dual else '')}.svg")
+    svgfile = f"{imgdir}memtile_passthrough{('_dual' if dual else '')}.svg"
+    app_builder.save(svgfile)
+    assert _count_class_occurrences(svgfile, 'kernel') == 2
+    assert _count_class_occurrences(svgfile, 'mem_tile_buffers') == 2 + 2 * dual
 
 
 def test_mixed_kernels_scaledup():
@@ -180,7 +187,9 @@ def test_mixed_kernels_scaledup():
     x_out1 = np.zeros(shape=(720, 1280), dtype=np.uint8)
     app_builder = ScaledUpMixedKernelsApplication()
     _ = app_builder.to_metadata(x_in, x_out1)
-    app_builder.save(f'{imgdir}ScaledUpMixedKernelsApplication.svg')
+    app_builder.save(svgfile := f'{imgdir}ScaledUpMixedKernelsApplication.svg')
+    assert _count_class_occurrences(svgfile, 'kernel') == 8
+    assert _count_class_occurrences(svgfile, 'mem_tile_buffers') == 16
 
 
 @pytest.mark.parametrize('tloc', ['up', 'down', 'nonneighboring'])
@@ -223,7 +232,9 @@ def test_df_pipeline_scaledup(tloc):
 
     app_builder = ScaledUpDfPipelineApplication()
     _ = app_builder.to_metadata(x_in, x_out)
-    app_builder.save(f'{imgdir}ScaledUpDfPipelineApplication_{tloc}.svg')
+    svgfile = f'{imgdir}ScaledUpDfPipelineApplication_{tloc}.svg'
+    app_builder.save(svgfile)
+    assert _count_class_occurrences(svgfile, 'kernel') == 8
 
 
 def test_dataparallel():
