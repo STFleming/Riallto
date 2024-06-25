@@ -107,7 +107,7 @@ def test_color_detect(down):
     svgfile = f"{imgdir}ColorDetectApplication_{('down' if down else 'up')}.svg"
     app_bldr.save(svgfile)
     assert _count_class_occurrences(svgfile, 'kernel') == 8
-    assert _count_class_occurrences(svgfile, 'mem_tile_buffers') == 2
+    assert _count_class_occurrences(svgfile, 'mem_tile_buffers') == 4
 
 
 @pytest.mark.parametrize('scale', [1, 2, 4])
