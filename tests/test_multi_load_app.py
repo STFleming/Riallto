@@ -4,6 +4,7 @@
 import pytest
 import numpy as np
 import os
+import platform
 from .test_applications import check_npu
 from npu.runtime import AppRunner
 from npu.utils.xbutil import XBUtil
@@ -14,6 +15,15 @@ def _get_full_path(xclbin: str = None) -> str:
     binaries = os.path.dirname(os.path.abspath(__file__)) \
         + '/../npu/lib/applications/binaries/'
     return os.path.abspath(os.path.join(binaries, xclbin))
+
+
+def _xbutil(appcount):
+    state = True
+    if platform.system() == 'Windows':
+        appsreport = XBUtil()
+        state = appsreport.app_count == appcount
+        del appsreport
+    return state
 
 
 def test_double_load_custom_app():
@@ -29,9 +39,8 @@ def test_double_load_custom_app():
     assert app
     app1 = AppRunner("SimplePlusN.xclbin")
     assert app1
-    appsreport = XBUtil()
-    assert appsreport.app_count == 2
-    del app, app1, appsreport
+    assert _xbutil(2)
+    del app, app1
 
 
 @pytest.mark.parametrize('numappsreport', [2, 3, 4])
@@ -43,12 +52,11 @@ def test_videoapp_n_loads(numappsreport):
     for _ in range(numappsreport):
         app.append(AppRunner(appbin))
 
-    appsreport = XBUtil()
-    assert appsreport.app_count == numappsreport
+    assert _xbutil(numappsreport)
 
     for i in range(numappsreport):
         assert app[i]
-    del app, appsreport
+    del app
 
 
 def test_videoapp_five_loads():
@@ -64,12 +72,11 @@ def test_videoapp_five_loads():
     for i in range(4):
         assert app[i]
 
-    appsreport = XBUtil()
-    assert appsreport.app_count == 4
+    assert _xbutil(4)
 
     with pytest.raises(RuntimeError) as verr:
         app1 = AppRunner(appbin)
         del app1
     assert 'There is currently no free space on the NPU' in str(verr.value)
 
-    del app, appsreport
+    del app
