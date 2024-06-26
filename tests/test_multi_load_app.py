@@ -59,6 +59,8 @@ def test_videoapp_n_loads(numappsreport):
     del app
 
 
+@pytest.mark.skipif(platform.system() == 'Linux',
+                    reason="Skip because we don't get app_count in Linux")
 def test_videoapp_five_loads():
     """Load five instances of the same app.
     AppRunner should return a RuntimeError indicating not enough space
