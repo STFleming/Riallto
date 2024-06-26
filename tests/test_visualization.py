@@ -77,7 +77,7 @@ def test_ct2ct(app):
     assert _count_class_occurrences(svgfile, 'kernel') == 4
 
 
-@pytest.mark.parametrize('down', [True, False])
+@pytest.mark.parametrize('down', [True, False]) # multicast should generate only one token from memory tile, then switch should multicast
 def test_color_detect(down):
     class ColorDetectApplication(AppBuilder):
         def __init__(self):
@@ -107,7 +107,7 @@ def test_color_detect(down):
     svgfile = f"{imgdir}ColorDetectApplication_{('down' if down else 'up')}.svg"
     app_bldr.save(svgfile)
     assert _count_class_occurrences(svgfile, 'kernel') == 8
-    assert _count_class_occurrences(svgfile, 'mem_tile_buffers') == 4
+    assert _count_class_occurrences(svgfile, 'mem_tile_buffers') == 2
 
 
 @pytest.mark.parametrize('scale', [1, 2, 4])
