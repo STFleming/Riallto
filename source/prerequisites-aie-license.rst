@@ -5,7 +5,7 @@ AIE Build License
 
 To run any of the build time examples, you will need an AIE build license. Execute these instructions after the 'Full' install has completed.
 
-You will require the WSL instance MAC address in order to apply for a AIE build license. 
+You will require your network adapters MAC address on Linux and the WSL instance MAC address on Windows in order to apply for a AIE build license. 
 
 On Windows you can get your WSL MAC address by running the following command in Powershell:
 
