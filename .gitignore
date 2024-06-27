@@ -13,3 +13,8 @@ install/tarballs/*.tar.gz
 *-checkpoint.ipynb
 
 tests/images/*.svg
+
+/*.json
+/*.xclbin
+/*.mlir
+/*.seq
