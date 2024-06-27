@@ -11,6 +11,8 @@ from npu.lib.graphs.graph_1ct import RGB720pBuilder
 from npu.lib import Rgba2Hue, Rgba2Gray, Gray2Rgba, BitwiseAnd
 from npu.lib import InRange, RgbaRtpThres, ThresholdRgba
 import re
+import random
+import string
 
 imgdir = str(Path(__file__).parent / "images") + '/'
 x_in = np.zeros(shape=(720, 1280, 4), dtype=np.uint8)
@@ -244,7 +246,8 @@ def test_df_pipeline_scaledup(tloc):
     assert _count_class_occurrences(svgfile, 'aie_tile_buffers') == 12 # should be 16 for non neighboring
 
 
-def test_dataparallel():
+@pytest.mark.parametrize('randomname', [False, True])
+def test_dataparallel(randomname):
     """Test a data parallel application with buffers with random names"""
     kernel_src = '''
         #include <aie_api/aie.hpp>
@@ -258,8 +261,20 @@ def test_dataparallel():
         } // extern "C"
     '''
 
+    def _random_string():
+        letters = string.ascii_letters
+        return ''.join(random.choice(letters) for i in range(16))
+
+    inname, outname = 'data_in', 'data_out'
+    if randomname:
+        inname, outname = _random_string(), _random_string()
+        kernel_src = kernel_src.replace('data_in', inname)
+        kernel_src = kernel_src.replace('data_out', outname)
+
     def setval_behavioral(obj):
-        obj.data_out.array = obj.data_in.array
+        objout = getattr(obj, outname)
+        objin = getattr(obj, inname)
+        objout.array = objin.array
 
     class DataParallelPassthrough(AppBuilder):
         def __init__(self):
@@ -278,7 +293,8 @@ def test_dataparallel():
 
     app_builder = DataParallelPassthrough()
     _ = app_builder.to_metadata(x_in, x_out)
-    app_builder.save(svgfile := f'{imgdir}{app_builder.name}.svg')
+    svgfile = f'{imgdir}{app_builder.name}_{inname}_{outname}.svg'
+    app_builder.save(svgfile)
 
     assert _count_class_occurrences(svgfile, 'kernel') == 8
     assert _count_class_occurrences(svgfile, 'mem_tile_buffers') == 16
