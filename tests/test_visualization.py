@@ -30,7 +30,10 @@ def _count_class_occurrences(svgfile, classname):
 @pytest.mark.parametrize('kernel', [RgbaRtpThres, ThresholdRgba])
 def test_RGB720pBuilder(kernel):
     app_builder = RGB720pBuilder(kernel=kernel())
-    app_builder.save(f'{imgdir}RGB720pBuilder{str(kernel().name)}.svg')
+    svgfile = f'{imgdir}RGB720pBuilder{str(kernel().name)}.svg'
+    app_builder.save(svgfile)
+    assert _count_class_occurrences(svgfile, 'kernel') == 2
+    assert _count_class_occurrences(svgfile, 'aie_tile_buffers') == 4
 
 
 def test_single_kernel():
