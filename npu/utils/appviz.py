@@ -277,8 +277,7 @@ class AppViz:
                     duration=self._kanimate_duration/2,
                     delay=delay,
                     color=dst_color)
-        if mtmode in ['split', 'passthrough']:
-            self._mt2ct_counter += 1
+        self._mt2ct_counter += int(mtmode == 'split')
 
     def _draw_ub2mem_ic(self, src, dst) -> None:
         """Display animation originating from IT and destination MT"""
