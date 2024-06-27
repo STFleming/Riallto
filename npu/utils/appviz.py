@@ -155,7 +155,7 @@ class AppViz:
                     self._col_svg.aie_tiles[dst_row].add_buffer(
                             self._drawn_kernels[src['name']]['kcolor'],
                             self._kanimate_duration/2,
-                            start_empty=not bool(i))
+                            start_empty= bool(i))
 
             self._draw_ct2ct_data_movement(src, dst)
 
