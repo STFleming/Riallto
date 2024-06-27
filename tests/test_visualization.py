@@ -58,7 +58,7 @@ ct2ct = [['non_neighbor_down', (0, 5), (0, 2)],
          ['neighbor_up', (0, 2), (0, 3)]]
 
 
-@pytest.mark.parametrize('app', ct2ct) # Non neighbors should add buffer in receiving kernel
+@pytest.mark.parametrize('app', ct2ct)
 def test_ct2ct(app):
     class Pipeline(AppBuilder):
         def __init__(self):
@@ -77,9 +77,10 @@ def test_ct2ct(app):
     app_builder = Pipeline()
     x_out1 = np.zeros(shape=(720, 1280), dtype=np.uint8)
     _ = app_builder.to_metadata(x_in, x_out1)
-    app_builder.save((svgfile := imgdir + app_builder.name + app[0] + '.svg'))
+    app_builder.save((svgfile := imgdir + app_builder.name + '_' + app[0] + '.svg'))
     assert _count_class_occurrences(svgfile, 'kernel') == 4
-    assert _count_class_occurrences(svgfile, 'aie_tile_buffers') == 6 # should be 8 for non neighbors
+    aiebuff = 8 if 'non_' in app[0] else 6
+    assert _count_class_occurrences(svgfile, 'aie_tile_buffers') == aiebuff
 
 
 @pytest.mark.parametrize('down', [True, False])
@@ -243,7 +244,8 @@ def test_df_pipeline_scaledup(tloc):
     app_builder.save(svgfile := f'{imgdir}{app_builder.name}_{tloc}.svg')
     assert _count_class_occurrences(svgfile, 'kernel') == 8
     assert _count_class_occurrences(svgfile, 'mem_tile_buffers') == 8
-    assert _count_class_occurrences(svgfile, 'aie_tile_buffers') == 12 # should be 16 for non neighboring
+    aiebuff = 16 if tloc == 'nonneighboring' else 12
+    assert _count_class_occurrences(svgfile, 'aie_tile_buffers') == aiebuff
 
 
 @pytest.mark.parametrize('randomname', [False, True])
