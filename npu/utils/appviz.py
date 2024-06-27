@@ -144,11 +144,19 @@ class AppViz:
 
         if src['type'] == 'CT' and dst['type'] == 'CT':
             src_row = self._drawn_kernels[src['name']]['row']
+            dst_row = self._drawn_kernels[dst['name']]['row']
             for i in range(2):
                 self._col_svg.aie_tiles[src_row].add_buffer(
                             self._drawn_kernels[src['name']]['kcolor'],
                             self._kanimate_duration/2,
                             start_empty=not bool(i))
+                # if CTs are non neighbors we need to add double buffer in dst
+                if not self._are_neighbors(src, dst):
+                    self._col_svg.aie_tiles[dst_row].add_buffer(
+                            self._drawn_kernels[src['name']]['kcolor'],
+                            self._kanimate_duration/2,
+                            start_empty=not bool(i))
+
             self._draw_ct2ct_data_movement(src, dst)
 
         if src['type'] == 'IT' and dst['type'] == 'CT':
