@@ -32,7 +32,7 @@ def test_RGB720pBuilder(kernel):
 
 
 def test_single_kernel():
-    class SingleKernel(AppBuilder):
+    class SingleKernelOneCTOneIT(AppBuilder):
         def __init__(self):
             self.kernel = RgbaRtpThres()
             super().__init__()
@@ -43,9 +43,11 @@ def test_single_kernel():
                                 128, 128)
                 x_out[t] = x
 
-    app_builder = SingleKernel()
+    app_builder = SingleKernelOneCTOneIT()
     _ = app_builder.to_metadata(x_in, x_out)
-    app_builder.save(f'{imgdir}single_ct_and_it.svg')
+    app_builder.save(svgfile := f'{imgdir}{app_builder.name}.svg')
+    assert _count_class_occurrences(svgfile, 'kernel') == 2
+    assert _count_class_occurrences(svgfile, 'aie_tile_buffers') == 4
 
 
 ct2ct = [['non_neighbor_down', (0, 5), (0, 2)],
@@ -54,7 +56,7 @@ ct2ct = [['non_neighbor_down', (0, 5), (0, 2)],
          ['neighbor_up', (0, 2), (0, 3)]]
 
 
-@pytest.mark.parametrize('app', ct2ct)
+@pytest.mark.parametrize('app', ct2ct) # Non neighbors should add buffer in receiving kernel
 def test_ct2ct(app):
     class Pipeline(AppBuilder):
         def __init__(self):
@@ -73,8 +75,9 @@ def test_ct2ct(app):
     app_builder = Pipeline()
     x_out1 = np.zeros(shape=(720, 1280), dtype=np.uint8)
     _ = app_builder.to_metadata(x_in, x_out1)
-    app_builder.save((svgfile := imgdir + app[0] + '.svg'))
+    app_builder.save((svgfile := imgdir + app_builder.name + app[0] + '.svg'))
     assert _count_class_occurrences(svgfile, 'kernel') == 4
+    assert _count_class_occurrences(svgfile, 'aie_tile_buffers') == 6 # should be 8 for non neighbors
 
 
 @pytest.mark.parametrize('down', [True, False])
@@ -102,12 +105,13 @@ def test_color_detect(down):
                 x = self.bitwiseand(x, y, 1280*4)
                 x_out[t] = x
 
-    app_bldr = ColorDetectApplication()
-    _ = app_bldr.to_metadata(x_in, x_out)
-    svgfile = f"{imgdir}ColorDetectApplication_{('down' if down else 'up')}.svg"
-    app_bldr.save(svgfile)
+    app_builder = ColorDetectApplication()
+    _ = app_builder.to_metadata(x_in, x_out)
+    svgfile = f"{imgdir}{app_builder.name}_{('down' if down else 'up')}.svg"
+    app_builder.save(svgfile)
     assert _count_class_occurrences(svgfile, 'kernel') == 8
     assert _count_class_occurrences(svgfile, 'mem_tile_buffers') == 2
+    assert _count_class_occurrences(svgfile, 'aie_tile_buffers') == 12
 
 
 @pytest.mark.parametrize('scale', [1, 2, 4])
@@ -133,14 +137,14 @@ def test_color_scaledup(scale):
 
     app_builder = ScaledUpThresholdApplication()
     _ = app_builder.to_metadata(x_in, x_out)
-    svgfile = f'{imgdir}ScaledUpThresholdApplication_x{scale}.svg'
-    app_builder.save(svgfile)
+    app_builder.save(svgfile := f'{imgdir}{app_builder.name}_x{scale}.svg')
     assert _count_class_occurrences(svgfile, 'kernel') == scale * 2
+    assert _count_class_occurrences(svgfile, 'aie_tile_buffers') == scale * 4
 
 
 @pytest.mark.parametrize('dual', [True, False])
 def test_mtpassthrough(dual):
-    class SimpleMemTileApplication(AppBuilder):
+    class SimpleMemTilePassthrough(AppBuilder):
         def __init__(self):
             self.mtbi = MTPassThrough()
             self.mtbo = MTPassThrough()
@@ -156,12 +160,13 @@ def test_mtpassthrough(dual):
                     x = self.mtbo(x)
                 x_out[t] = x
 
-    app_builder = SimpleMemTileApplication()
+    app_builder = SimpleMemTilePassthrough()
     _ = app_builder.to_metadata(x_in, x_out)
-    svgfile = f"{imgdir}memtile_passthrough{('_dual' if dual else '')}.svg"
+    svgfile = f"{imgdir}{app_builder.name}{('_dual' if dual else '')}.svg"
     app_builder.save(svgfile)
     assert _count_class_occurrences(svgfile, 'kernel') == 2
     assert _count_class_occurrences(svgfile, 'mem_tile_buffers') == 2 + 2 * dual
+    assert _count_class_occurrences(svgfile, 'aie_tile_buffers') == 4
 
 
 def test_mixed_kernels_scaledup():
@@ -187,9 +192,10 @@ def test_mixed_kernels_scaledup():
     x_out1 = np.zeros(shape=(720, 1280), dtype=np.uint8)
     app_builder = ScaledUpMixedKernelsApplication()
     _ = app_builder.to_metadata(x_in, x_out1)
-    app_builder.save(svgfile := f'{imgdir}ScaledUpMixedKernelsApplication.svg')
+    app_builder.save(svgfile := f'{imgdir}{app_builder.name}.svg')
     assert _count_class_occurrences(svgfile, 'kernel') == 8
     assert _count_class_occurrences(svgfile, 'mem_tile_buffers') == 16
+    assert _count_class_occurrences(svgfile, 'aie_tile_buffers') == 16
 
 
 @pytest.mark.parametrize('tloc', ['up', 'down', 'nonneighboring'])
@@ -232,12 +238,14 @@ def test_df_pipeline_scaledup(tloc):
 
     app_builder = ScaledUpDfPipelineApplication()
     _ = app_builder.to_metadata(x_in, x_out)
-    svgfile = f'{imgdir}ScaledUpDfPipelineApplication_{tloc}.svg'
-    app_builder.save(svgfile)
+    app_builder.save(svgfile := f'{imgdir}{app_builder.name}_{tloc}.svg')
     assert _count_class_occurrences(svgfile, 'kernel') == 8
+    assert _count_class_occurrences(svgfile, 'mem_tile_buffers') == 8
+    assert _count_class_occurrences(svgfile, 'aie_tile_buffers') == 12 # should be 16 for non neighboring
 
 
 def test_dataparallel():
+    """Test a data parallel application with buffers with random names"""
     kernel_src = '''
         #include <aie_api/aie.hpp>
         #define N 720
@@ -270,8 +278,8 @@ def test_dataparallel():
 
     app_builder = DataParallelPassthrough()
     _ = app_builder.to_metadata(x_in, x_out)
-    svgfile = f'{imgdir}DataParallelPassthrough.svg'
-    app_builder.save(svgfile)
+    app_builder.save(svgfile := f'{imgdir}{app_builder.name}.svg')
 
     assert _count_class_occurrences(svgfile, 'kernel') == 8
     assert _count_class_occurrences(svgfile, 'mem_tile_buffers') == 16
+    assert _count_class_occurrences(svgfile, 'aie_tile_buffers') == 16
